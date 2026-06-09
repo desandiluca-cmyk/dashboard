@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Luca</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: #e2e0d8;
+    --text: #1a1917;
+    --muted: #6b6a65;
+    --hint: #a09e98;
+    --green: #2d7d52;
+    --green-bg: #e8f5ee;
+    --amber: #926b10;
+    --amber-bg: #fef3d6;
+    --blue: #1a5fa8;
+    --blue-bg: #e6f0fb;
+    --gray-bg: #eeede8;
+    --red: #9b3030;
+    --accent: #2d7d52;
+    --font: -apple-system, 'Helvetica Neue', sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16150f;
+      --surface: #1e1d17;
+      --surface2: #282720;
+      --border: #333228;
+      --text: #f0efe9;
+      --muted: #a09e98;
+      --hint: #6b6a65;
+      --green: #4caf7d;
+      --green-bg: #1a3327;
+      --amber: #e0a830;
+      --amber-bg: #2e2310;
+      --blue: #5b9de0;
+      --blue-bg: #162035;
+      --gray-bg: #252420;
+      --red: #d96060;
+      --accent: #4caf7d;
+    }
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  .header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 56px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 100;
+  }
+  .header-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .header-date {
+    font-size: 12px;
+    color: var(--hint);
+  }
+
+  /* ── Nav dots ── */
+  .nav-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 60px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    z-index: 100;
+  }
+  .dot-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 8px;
+    transition: background .15s;
+  }
+  .dot-btn:hover { background: var(--surface2); }
+  .dot-btn .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all .25s;
+  }
+  .dot-btn.active .dot {
+    background: var(--accent);
+    transform: scale(1.4);
+  }
+  .dot-btn .dot-label {
+    font-size: 9px;
+    color: var(--hint);
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: color .2s;
+  }
+  .dot-btn.active .dot-label { color: var(--accent); }
+
+  /* ── Pages ── */
+  .viewport {
+    position: fixed;
+    top: 56px; bottom: 60px;
+    left: 0; right: 0;
+    overflow: hidden;
+  }
+  .pages-track {
+    display: flex;
+    height: 100%;
+    transition: transform .35s cubic-bezier(.4,0,.2,1);
+  }
+  .page {
+    min-width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    padding: 20px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ── Page header ── */
+  .page-eyebrow {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--hint);
+  }
+  .page-h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.15;
+    margin-top: 2px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--hint);
+    margin-bottom: 10px;
+  }
+
+  /* ── Metrics grid ── */
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .metric {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .metric-label { font-size: 11px; color: var(--hint); margin-bottom: 3px; }
+  .metric-val { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; }
+  .metric-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* ── Rows ── */
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    gap: 8px;
+  }
+  .row:last-child { border-bottom: none; padding-bottom: 0; }
+  .row-label { color: var(--muted); flex-shrink: 0; }
+  .row-right { display: flex; align-items: center; gap: 6px; }
+  .row-val { font-weight: 600; color: var(--text); text-align: right; }
+
+  /* ── Badges ── */
+  .badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .badge-green { background: var(--green-bg); color: var(--green); }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); }
+  .badge-blue  { background: var(--blue-bg);  color: var(--blue); }
+  .badge-gray  { background: var(--gray-bg);  color: var(--muted); }
+
+  /* ── Checklist ── */
+  .checklist { display: flex; flex-direction: column; gap: 2px; }
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .12s;
+    user-select: none;
+  }
+  .check-row:hover { background: var(--surface2); }
+  .check-box {
+    width: 18px; height: 18px;
+    border-radius: 5px;
+    border: 1.5px solid var(--border);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+    background: var(--surface);
+  }
+  .check-row.done .check-box {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .check-tick { display: none; }
+  .check-row.done .check-tick { display: block; }
+  .check-text { font-size: 13px; color: var(--text); transition: color .15s; }
+  .check-row.done .check-text { color: var(--hint); text-decoration: line-through; }
+
+  /* ── Progress bar ── */
+  .progress-wrap { margin-top: 2px; }
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--hint);
+    margin-bottom: 6px;
+  }
+  .progress-track {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--surface2);
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--accent);
+    transition: width .6s ease;
+  }
+  .progress-note { font-size: 11px; color: var(--hint); margin-top: 5px; }
+
+  /* ── Editable fields ── */
+  .field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .field-row:last-child { border-bottom: none; }
+  .field-label { font-size: 12px; color: var(--muted); flex: 1; }
+  .field-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    width: 110px;
+    text-align: right;
+    font-family: var(--font);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .field-input:focus { border-color: var(--accent); }
+
+  /* ── Ideas ── */
+  .idea-list { display: flex; flex-direction: column; gap: 8px; }
+  .idea {
+    border-left: 3px solid var(--border);
+    padding: 8px 12px;
+    border-radius: 0 8px 8px 0;
+    background: var(--surface2);
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .idea.hot  { border-color: #e05a28; }
+  .idea.warm { border-color: #d4930c; }
+  .idea.cold { border-color: var(--hint); }
+  .idea-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .idea-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Add idea ── */
+  .add-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .add-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: var(--font);
+    outline: none;
+  }
+  .add-input:focus { border-color: var(--accent); }
+  .add-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .add-btn:hover { opacity: .85; }
+
+  /* ── Leve ── */
+  .leva-list { display: flex; flex-direction: column; gap: 8px; }
+  .leva {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .leva-icon { font-size: 22px; flex-shrink: 0; }
+  .leva-body { flex: 1; }
+  .leva-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .leva-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Timeline ── */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .tl-item {
+    display: flex;
+    gap: 14px;
+    padding-bottom: 16px;
+    position: relative;
+  }
+  .tl-item:last-child { padding-bottom: 0; }
+  .tl-left { display: flex; flex-direction: column; align-items: center; }
+  .tl-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+  .tl-dot.now  { background: var(--accent); }
+  .tl-dot.soon { background: var(--amber); }
+  .tl-dot.future { background: var(--border); }
+  .tl-line {
+    width: 1px;
+    flex: 1;
+    background: var(--border);
+    margin-top: 4px;
+  }
+  .tl-item:last-child .tl-line { display: none; }
+  .tl-content { flex: 1; }
+  .tl-period { font-size: 10px; font-weight: 600; color: var(--hint); letter-spacing: .06em; text-transform: uppercase; }
+  .tl-goal { font-size: 13px; color: var(--text); margin-top: 2px; line-height: 1.4; }
+
+  /* ── Swipe hint ── */
+  .swipe-hint {
+    font-size: 11px;
+    color: var(--hint);
+    text-align: center;
+    padding: 8px 0 4px;
+  }
+
+  /* ── Rischi ── */
+  .risk { display: flex; flex-direction: column; gap: 6px; }
+  .risk-item { font-size: 12px; padding: 8px 10px; background: var(--surface2); border-radius: 8px; }
+  .risk-q { font-weight: 600; color: var(--text); }
+  .risk-a { color: var(--muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">Luca</div>
+  <div class="header-date" id="hdate"></div>
+</div>
+
+<div class="viewport">
+  <div class="pages-track" id="track">
+
+    <!-- PAGE 1: Situazione ora -->
+    <div class="page">
+      <div>
+        <div class="page-eyebrow">Pagina 1 di 5</div>
+        <div class="page-h1">Situazione ora</div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Settimana</div>
+          <div class="metric-val">2 / 4</div>
+          <div class="metric-sub">Giacenze supermercato</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Accordo</div>
+          <div class="metric-val">€700</div>
+          <div class="metric-sub">Incasso tra ~2 sett.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Checklist progresso</div>
+        <div class="checklist" id="checklist"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Ritmo attuale</div>
+        <div class="row">
+          <span class="row-label">Ore al giorno</span>
+          <span class="row-val">3h (16–19)</span>
+        </div>
+        <div class="row">
+          <span class="row-label">Focus</span>
+          <span class="row-val">Solo supermercato</span>
+        </div>
+        <div class="row">
+          <span class="row-label">Energia</span>
+          <div class="row-right">
+            <span class="row-val">Alta</span>
+            <span class="badge badge-green">funziona</span>
+          </div>
+        </div>
+      </div>
+      <div class="swipe-hint">← scorri per cambiare pagina →</div>
+    </div>
+
+    <!-- PAGE 2: Soldi -->
+    <div class="page">
+      <div>
+        <div class="page-eyebrow">Pagina 2 di 5</div>
+        <div class="page-h1">Soldi</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Obiettivo: Claude Max €200</div>
+        <div class="progress-wrap">
+          <div class="progress-labels">
+            <span>€0</span><span>€200</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+          </div>
+          <div class="progress-note">Aggiorna il campo sotto quando incassi</div>
+        </div>
+        <div style="margin-top:12px">
+          <div class="field-row">
+            <div class="field-label">Incassato finora</div>
+            <input class="field-input" id="incassato" type="number" placeholder="€0" min="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Entrate attese</div>
+        <div class="row">
+          <span class="row-label">Giacenze supermercato</span>
+          <div class="row-right"><span class="row-val">€700</span><span class="badge badge-green">confermato</span></div>
+        </div>
+        <div class="row">
+          <span class="row-label">PC gaming</span>
+          <div class="row-right"><span class="row-val">~€400</span><span class="badge badge-amber">in corso</span></div>
+        </div>
+        <div class="row">
+          <span class="row-label">Vinted + oggetti</span>
+          <div class="row-right"><span class="row-val">~€200</span><span class="badge badge-amber">in corso</span></div>
+        </div>
+        <div class="row">
+          <span class="row-label">Freelance estero</span>
+          <div class="row-right"><span class="row-val">TBD</span><span class="badge badge-gray">da decidere</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Spese mensili fisse (compilale)</div>
+        <div id="spese-list"></div>
+        <div class="add-row" style="margin-top:10px">
+          <input class="add-input" id="spesa-name" placeholder="Voce spesa (es. internet)">
+          <input class="add-input" id="spesa-val" placeholder="€" style="width:70px;flex:none">
+          <button class="add-btn" onclick="addSpesa()">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 3: Idee -->
+    <div class="page">
+      <div>
+        <div class="page-eyebrow">Pagina 3 di 5</div>
+        <div class="page-h1">Idee & strade</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Per temperatura 🔥 caldo → ❄ freddo</div>
+        <div class="idea-list" id="idea-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Aggiungi un'idea</div>
+        <div class="add-row">
+          <input class="add-input" id="idea-input" placeholder="Scrivi l'idea...">
+          <button class="add-btn" onclick="addIdea()">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 4: Leve -->
+    <div class="page">
+      <div>
+        <div class="page-eyebrow">Pagina 4 di 5</div>
+        <div class="page-h1">Leve attivabili</div>
+      </div>
+
+      <div class="leva-list">
+        <div class="leva">
+          <div class="leva-icon">🏪</div>
+          <div class="leva-body">
+            <div class="leva-name">Finire le giacenze</div>
+            <div class="leva-desc">Sblocca €700 + fiducia padre + contratto riordini</div>
+          </div>
+          <span class="badge badge-green">attiva</span>
+        </div>
+        <div class="leva">
+          <div class="leva-icon">💻</div>
+          <div class="leva-body">
+            <div class="leva-name">Vendere il PC gaming</div>
+            <div class="leva-desc">~€400, zero energia attiva richiesta</div>
+          </div>
+          <span class="badge badge-amber">passiva</span>
+        </div>
+        <div class="leva">
+          <div class="leva-icon">📨</div>
+          <div class="leva-body">
+            <div class="leva-name">Rispondere alle offerte freelance</div>
+            <div class="leva-desc">3–4 offerte estere aperte — accetta o chiudi entro giugno</div>
+          </div>
+          <span class="badge badge-amber">in sospeso</span>
+        </div>
+        <div class="leva">
+          <div class="leva-icon">🤖</div>
+          <div class="leva-body">
+            <div class="leva-name">Attivare Claude Max</div>
+            <div class="leva-desc">Sblocca sessioni profonde sulla borraccia</div>
+          </div>
+          <span class="badge badge-gray">dopo €700</span>
+        </div>
+        <div class="leva">
+          <div class="leva-icon">💡</div>
+          <div class="leva-body">
+            <div class="leva-name">1h/settimana sulla borraccia</div>
+            <div class="leva-desc">Solo pensiero/appunti — tienila viva senza sforzo</div>
+          </div>
+          <span class="badge badge-blue">opzionale</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 5: Traiettoria -->
+    <div class="page">
+      <div>
+        <div class="page-eyebrow">Pagina 5 di 5</div>
+        <div class="page-h1">Traiettoria</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Visione finale</div>
+        <div style="font-size:14px;color:var(--muted);line-height:1.65">
+          Inventore con un prodotto fisico sul mercato, reddito autonomo e async, libertà di tempo e focus.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Fasi</div>
+        <div class="timeline">
+          <div class="tl-item">
+            <div class="tl-left"><div class="tl-dot now"></div><div class="tl-line"></div></div>
+            <div class="tl-content">
+              <div class="tl-period">Adesso — Giugno 2026</div>
+              <div class="tl-goal">Finire giacenze → €700 → Claude Max</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-left"><div class="tl-dot soon"></div><div class="tl-line"></div></div>
+            <div class="tl-content">
+              <div class="tl-period">Estate 2026</div>
+              <div class="tl-goal">Contratto riordini automatici + reddito stabile</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-left"><div class="tl-dot future"></div><div class="tl-line"></div></div>
+            <div class="tl-content">
+              <div class="tl-period">Fine 2026</div>
+              <div class="tl-goal">Prime sessioni serie sulla borraccia</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-left"><div class="tl-dot future"></div><div class="tl-line"></div></div>
+            <div class="tl-content">
+              <div class="tl-period">2027</div>
+              <div class="tl-goal">Prototipo fisico V1 borraccia</div>
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-left"><div class="tl-dot future"></div><div class="tl-line"></div></div>
+            <div class="tl-content">
+              <div class="tl-period">2027–2028</div>
+              <div class="tl-goal">Prodotto in vendita o licensing</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Rischi da monitorare</div>
+        <div class="risk">
+          <div class="risk-item">
+            <div class="risk-q">Padre non continua dopo le giacenze</div>
+            <div class="risk-a">Hai €700 e competenza MCP comunque — cerca altri clienti</div>
+          </div>
+          <div class="risk-item">
+            <div class="risk-q">Offerte freelance estero scadono</div>
+            <div class="risk-a">Decidere entro fine giugno</div>
+          </div>
+          <div class="risk-item">
+            <div class="risk-q">Ricomincia il multitasking</div>
+            <div class="risk-a">Regola ferma: max 1 progetto attivo alla volta</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="nav-bar" id="nav-bar"></div>
+
+<script>
+const PAGE_LABELS = ['Ora','Soldi','Idee','Leve','Traiettoria'];
+const track = document.getElementById('track');
+const navBar = document.getElementById('nav-bar');
+let cur = 0;
+const N = 5;
+
+function buildNav() {
+  PAGE_LABELS.forEach((lbl, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'dot-btn' + (i===0?' active':'');
+    btn.innerHTML = `<div class="dot"></div><div class="dot-label">${lbl}</div>`;
+    btn.onclick = () => goTo(i);
+    navBar.appendChild(btn);
+  });
+}
+
+function goTo(i) {
+  cur = ((i % N) + N) % N;
+  track.style.transform = `translateX(-${cur * 100}%)`;
+  document.querySelectorAll('.dot-btn').forEach((b,j) => b.classList.toggle('active', j===cur));
+}
+
+// Swipe
+let sx = 0, sy = 0;
+track.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, {passive:true});
+track.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - sx;
+  const dy = e.changedTouches[0].clientY - sy;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) goTo(cur + (dx < 0 ? 1 : -1));
+}, {passive:true});
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') goTo(cur+1);
+  if (e.key === 'ArrowLeft') goTo(cur-1);
+});
+
+// Date
+const d = new Date();
+document.getElementById('hdate').textContent = d.toLocaleDateString('it-IT', {day:'numeric', month:'long', year:'numeric'});
+
+// ── Storage helpers ──
+function load(k, def) {
+  try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch(e){ return def; }
+}
+function save(k, v) {
+  try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){}
+}
+
+// ── Checklist ──
+const CHECK_ITEMS = [
+  'MCP connesso a SQL Server',
+  'Primo reparto rettificato',
+  'Completare tutti i reparti',
+  'Consegnare il lavoro',
+  'Incassare €700',
+  'Attivare Claude Max'
+];
+const checkEl = document.getElementById('checklist');
+let checks = load('checks', [true, true, false, false, false, false]);
+
+function renderChecks() {
+  checkEl.innerHTML = '';
+  CHECK_ITEMS.forEach((txt, i) => {
+    const row = document.createElement('div');
+    row.className = 'check-row' + (checks[i] ? ' done' : '');
+    row.innerHTML = `
+      <div class="check-box">
+        <svg class="check-tick" width="10" height="8" viewBox="0 0 10 8" fill="none">
+          <path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="check-text">${txt}</span>`;
+    row.onclick = () => { checks[i] = !checks[i]; save('checks', checks); renderChecks(); };
+    checkEl.appendChild(row);
+  });
+}
+renderChecks();
+
+// ── Progress bar ──
+const incEl = document.getElementById('incassato');
+const fillEl = document.getElementById('progress-fill');
+let incassato = load('incassato', 0);
+incEl.value = incassato || '';
+fillEl.style.width = Math.min(100, (incassato/200)*100) + '%';
+incEl.addEventListener('input', () => {
+  const v = parseFloat(incEl.value) || 0;
+  save('incassato', v);
+  fillEl.style.width = Math.min(100, (v/200)*100) + '%';
+});
+
+// ── Spese ──
+let spese = load('spese', []);
+function renderSpese() {
+  const el = document.getElementById('spese-list');
+  el.innerHTML = '';
+  if (spese.length === 0) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--hint);padding:8px 0">Nessuna spesa aggiunta ancora</div>';
+    return;
+  }
+  spese.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.innerHTML = `
+      <div class="field-label">${s.name}</div>
+      <span style="font-size:13px;font-weight:600;color:var(--text)">€${s.val}</span>
+      <button onclick="removeSpesa(${i})" style="background:none;border:none;cursor:pointer;color:var(--hint);font-size:16px;padding:0 2px;line-height:1">×</button>`;
+    el.appendChild(row);
+  });
+}
+function addSpesa() {
+  const n = document.getElementById('spesa-name').value.trim();
+  const v = document.getElementById('spesa-val').value.trim();
+  if (!n) return;
+  spese.push({ name: n, val: v || '?' });
+  save('spese', spese);
+  renderSpese();
+  document.getElementById('spesa-name').value = '';
+  document.getElementById('spesa-val').value = '';
+}
+function removeSpesa(i) { spese.splice(i,1); save('spese', spese); renderSpese(); }
+renderSpese();
+
+// ── Idee ──
+const DEFAULT_IDEAS = [
+  { name: 'Borraccia squeeze (invenzione)', meta: 'Obiettivo finale — richiede Claude Max e tempo', temp: 'hot' },
+  { name: 'Riordini automatici supermercato', meta: 'Già confermato dal padre — prossimo contratto', temp: 'hot' },
+  { name: 'MCP B2B per altri clienti', meta: 'Competenza rara, mercato nascente', temp: 'warm' },
+  { name: 'Freelance estero AI/RLHF', meta: '3–4 offerte aperte — decidere entro giugno', temp: 'warm' },
+  { name: 'Automazione Telus/RWS', meta: 'Lasciato — rivaluta solo se reddito coperto', temp: 'cold' },
+];
+let ideas = load('ideas', DEFAULT_IDEAS);
+
+function renderIdeas() {
+  const el = document.getElementById('idea-list');
+  el.innerHTML = '';
+  ideas.forEach((idea, i) => {
+    const div = document.createElement('div');
+    div.className = `idea ${idea.temp}`;
+    div.innerHTML = `<div class="idea-name">${idea.name}</div><div class="idea-meta">${idea.meta}</div>`;
+    el.appendChild(div);
+  });
+}
+function addIdea() {
+  const v = document.getElementById('idea-input').value.trim();
+  if (!v) return;
+  ideas.unshift({ name: v, meta: 'Appena aggiunta', temp: 'warm' });
+  save('ideas', ideas);
+  renderIdeas();
+  document.getElementById('idea-input').value = '';
+}
+renderIdeas();
+
+buildNav();
+</script>
+</body>
+</html>
